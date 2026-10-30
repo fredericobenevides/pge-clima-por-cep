@@ -15,7 +15,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Erro ao carregar variáveis de ambiente: %v", err)
+		log.Printf("Arquivo .env não encontrado, usando variáveis de ambiente. Erro: %v", err)
 	}
 
 	viaCepService, weatherService := initDependencies()
