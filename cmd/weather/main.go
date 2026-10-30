@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/handler"
+	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/via_cep"
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/weather_api"
 	"github.com/joho/godotenv"
@@ -27,10 +28,10 @@ func main() {
 }
 
 func initDependencies() (viaCepService *via_cep.ViaCepService, weatherApiService *weather_api.WeatherApiService) {
-	viaCepService = via_cep.NewViaCepService()
+	viaCepService = via_cep.NewViaCepService(http_client.NewHttpClient())
 
 	apiKey := os.Getenv("WEATHER_API_KEY")
-	weatherApiService, ierr := weather_api.NewWeatherApiService(apiKey)
+	weatherApiService, ierr := weather_api.NewWeatherApiService(http_client.NewHttpClient(), apiKey)
 	if ierr != nil {
 		log.Println("Error ao criar serviço de clima:", ierr.Message)
 		panic(ierr)

@@ -1,11 +1,13 @@
-# Test fetching weather for CEP 01001000
-GET http://localhost:8080/clima/01001000
+@base_url = http://localhost:8080/clima
+
+# Busca informações do clima para o CEP 01001000
+GET {{base_url}}/01001000
 Content-Type: application/json
 
-### Test fetching weather for an invalid CEP
-GET http://localhost:8080/clima/11111111
+### Not 
+GET {{base_url}}/11111111
 Content-Type: application/json
 
 ### Test fetching weather for a valid CEP with invalid format
-GET http://localhost:8080/clima/01.001-000
+GET {{base_url}}/01.001-000
 Content-Type: application/json

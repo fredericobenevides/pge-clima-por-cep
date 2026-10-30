@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 
+	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/internal_error"
 )
 
@@ -24,15 +26,16 @@ type CurrentTemperature struct {
 }
 
 type WeatherApiService struct {
-	apiKey string
+	httpClient http_client.HttpClientInterface
+	apiKey     string
 }
 
-func NewWeatherApiService(apiKey string) (*WeatherApiService, *internal_error.InternalError) {
+func NewWeatherApiService(httpClient http_client.HttpClientInterface, apiKey string) (*WeatherApiService, *internal_error.InternalError) {
 	if apiKey == "" {
 		return nil, internal_error.NewBadRequestError(ErrApiKeyObrigatoria.Error())
 	}
 
-	return &WeatherApiService{apiKey: apiKey}, nil
+	return &WeatherApiService{httpClient: httpClient, apiKey: apiKey}, nil
 }
 
 func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Context, localidade string) (float64, *internal_error.InternalError) {
@@ -57,11 +60,15 @@ func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Contex
 		return 0, internal_error.NewInternalError(err.Error())
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ws.httpClient.Do(req)
 	if err != nil {
 		return 0, internal_error.NewInternalError(err.Error())
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, internal_error.NewInternalError(fmt.Sprintf("Erro ao buscar clima para a localidade: %s", localidade))
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

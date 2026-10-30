@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/internal_error"
 )
 
@@ -18,10 +19,13 @@ type ViaCep struct {
 }
 
 type ViaCepService struct {
+	httpClient http_client.HttpClientInterface
 }
 
-func NewViaCepService() *ViaCepService {
-	return &ViaCepService{}
+func NewViaCepService(httpClient http_client.HttpClientInterface) *ViaCepService {
+	return &ViaCepService{
+		httpClient: httpClient,
+	}
 }
 
 func (vc *ViaCepService) CarregarDadosLocalidadePorCep(ctx context.Context, cep string) (string, *internal_error.InternalError) {
@@ -38,11 +42,19 @@ func (vc *ViaCepService) CarregarDadosLocalidadePorCep(ctx context.Context, cep 
 		return "", internal_error.NewInternalError(err.Error())
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := vc.httpClient.Do(req)
 	if err != nil {
 		return "", internal_error.NewInternalError(err.Error())
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return "", internal_error.NewNotFoundError(ErrCepNaoEncontrado.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", internal_error.NewInternalError(fmt.Sprintf("Erro ao buscar localidade para o CEP: %s", cep))
+	}
 
 	var viaCep ViaCep
 

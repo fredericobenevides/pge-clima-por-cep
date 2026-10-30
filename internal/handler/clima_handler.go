@@ -46,6 +46,7 @@ func (ch *ClimaHandler) BuscarClima(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Erro ao buscar localidade:", err.Message)
 		w.WriteHeader(err.Status)
+		w.Write([]byte("Não foi possível encontrar a localidade para o CEP informado"))
 		return
 	}
 
@@ -53,6 +54,7 @@ func (ch *ClimaHandler) BuscarClima(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Erro ao buscar dados do clima: %v", err)
 		w.WriteHeader(err.Status)
+		w.Write([]byte("Não foi possível buscar os dados do clima para a localidade informada"))
 		return
 	}
 
