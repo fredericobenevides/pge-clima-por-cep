@@ -4,18 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
-	"github.com/fredericobenevides/pge-clima-por-cep/internal/internal_error"
 )
 
 var ErrApiKeyObrigatoria = errors.New("apiKey deve ser fornecida")
 var ErrCidadeObrigatoria = errors.New("cidade deve ser fornecida")
+var ErrBuscaClima = errors.New("Erro ao buscar clima para a localidade")
 
 type WeatherCurrent struct {
 	CurrentTemperature CurrentTemperature `json:"current"`
@@ -30,24 +29,24 @@ type WeatherApiService struct {
 	apiKey     string
 }
 
-func NewWeatherApiService(httpClient http_client.HttpClientInterface, apiKey string) (*WeatherApiService, *internal_error.InternalError) {
+func NewWeatherApiService(httpClient http_client.HttpClientInterface, apiKey string) (*WeatherApiService, error) {
 	if apiKey == "" {
-		return nil, internal_error.NewBadRequestError(ErrApiKeyObrigatoria.Error())
+		return nil, ErrApiKeyObrigatoria
 	}
 
 	return &WeatherApiService{httpClient: httpClient, apiKey: apiKey}, nil
 }
 
-func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Context, localidade string) (float64, *internal_error.InternalError) {
+func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Context, localidade string) (float64, error) {
 	log.Println("Buscando clima para a seguinte localidade:", localidade)
 
 	if localidade == "" {
-		return 0, internal_error.NewBadRequestError(ErrCidadeObrigatoria.Error())
+		return 0, ErrCidadeObrigatoria
 	}
 
 	endpoint, err := url.Parse("https://api.weatherapi.com/v1/current.json")
 	if err != nil {
-		return 0, internal_error.NewInternalError(err.Error())
+		return 0, err
 	}
 
 	query := endpoint.Query()
@@ -57,27 +56,27 @@ func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Contex
 
 	req, err := http.NewRequestWithContext(ctx, "GET", endpoint.String(), nil)
 	if err != nil {
-		return 0, internal_error.NewInternalError(err.Error())
+		return 0, err
 	}
 
 	resp, err := ws.httpClient.Do(req)
 	if err != nil {
-		return 0, internal_error.NewInternalError(err.Error())
+		return 0, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return 0, internal_error.NewInternalError(fmt.Sprintf("Erro ao buscar clima para a localidade: %s", localidade))
+		return 0, ErrBuscaClima
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return 0, internal_error.NewInternalError(err.Error())
+		return 0, err
 	}
 
 	var weather WeatherCurrent
 	if err := json.Unmarshal(body, &weather); err != nil {
-		return 0, internal_error.NewInternalError(err.Error())
+		return 0, err
 	}
 
 	log.Printf("Clima encontrado para a localidade %s: %v\n", localidade, weather.CurrentTemperature.TempCelsius)

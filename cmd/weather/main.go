@@ -31,10 +31,10 @@ func initDependencies() (viaCepService *via_cep.ViaCepService, weatherApiService
 	viaCepService = via_cep.NewViaCepService(http_client.NewHttpClient())
 
 	apiKey := os.Getenv("WEATHER_API_KEY")
-	weatherApiService, ierr := weather_api.NewWeatherApiService(http_client.NewHttpClient(), apiKey)
-	if ierr != nil {
-		log.Println("Error ao criar serviço de clima:", ierr.Message)
-		panic(ierr)
+	weatherApiService, err := weather_api.NewWeatherApiService(http_client.NewHttpClient(), apiKey)
+	if err != nil {
+		log.Println("Error ao criar serviço de clima:", err)
+		panic(err)
 	}
 
 	return

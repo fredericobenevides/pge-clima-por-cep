@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/fredericobenevides/pge-clima-por-cep/internal/internal_error"
+	"github.com/fredericobenevides/pge-clima-por-cep/internal/via_cep"
 	"github.com/fredericobenevides/pge-clima-por-cep/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,7 +52,7 @@ func TestClimaHandlerCepFormatoInvalido(t *testing.T) {
 	climaHandler.BuscarClima(recorder, request)
 
 	assert.Equal(t, 422, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "CEP inválido. Cep deve ter 8 caracteres no formato numérico")
+	assert.Contains(t, recorder.Body.String(), "invalid zipcode")
 }
 
 func TestClimaHandlerCepNaoEncontrado(t *testing.T) {
@@ -61,7 +61,7 @@ func TestClimaHandlerCepNaoEncontrado(t *testing.T) {
 
 	var cep = "11111111"
 
-	mockViaService.On("CarregarDadosLocalidadePorCep", mock.Anything, cep).Return("", internal_error.NewNotFoundError("CEP não encontrado"))
+	mockViaService.On("CarregarDadosLocalidadePorCep", mock.Anything, cep).Return("", via_cep.ErrCepNaoEncontrado)
 
 	climaHandler := NewClimaHandler(
 		mockViaService,
@@ -75,5 +75,5 @@ func TestClimaHandlerCepNaoEncontrado(t *testing.T) {
 	climaHandler.BuscarClima(recorder, request)
 
 	assert.Equal(t, 404, recorder.Code)
-	assert.Contains(t, recorder.Body.String(), "Não foi possível encontrar a localidade para o CEP informado")
+	assert.Contains(t, recorder.Body.String(), "can not find zipcode")
 }

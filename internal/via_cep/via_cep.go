@@ -3,16 +3,18 @@ package via_cep
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
-	"github.com/fredericobenevides/pge-clima-por-cep/internal/internal_error"
 )
 
-var ErrCepNaoEncontrado = fmt.Errorf("Erro ao buscar localidade para o CEP informado")
+var ErrCepObrigatorio = errors.New("zipcode is required")
+var ErrCepNaoEncontrado = errors.New("can not find zipcode")
+var ErrBuscaCep = errors.New("Error fetching zipcode data")
 
 type ViaCep struct {
 	Localidade string `json:"localidade"`
@@ -28,47 +30,47 @@ func NewViaCepService(httpClient http_client.HttpClientInterface) *ViaCepService
 	}
 }
 
-func (vc *ViaCepService) CarregarDadosLocalidadePorCep(ctx context.Context, cep string) (string, *internal_error.InternalError) {
+func (vc *ViaCepService) CarregarDadosLocalidadePorCep(ctx context.Context, cep string) (string, error) {
 	log.Println("Buscando localidade para o CEP:", cep)
 
 	if cep == "" {
-		return "", internal_error.NewBadRequestError("CEP deve ser fornecido")
+		return "", ErrCepObrigatorio
 	}
 
 	var url = fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return "", internal_error.NewInternalError(err.Error())
+		return "", err
 	}
 
 	resp, err := vc.httpClient.Do(req)
 	if err != nil {
-		return "", internal_error.NewInternalError(err.Error())
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return "", internal_error.NewNotFoundError(ErrCepNaoEncontrado.Error())
+		return "", ErrCepNaoEncontrado
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", internal_error.NewInternalError(fmt.Sprintf("Erro ao buscar localidade para o CEP: %s", cep))
+		return "", ErrBuscaCep
 	}
 
 	var viaCep ViaCep
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", internal_error.NewInternalError(err.Error())
+		return "", err
 	}
 
 	if err := json.Unmarshal(body, &viaCep); err != nil {
-		return "", internal_error.NewInternalError(err.Error())
+		return "", err
 	}
 
 	if viaCep.Localidade == "" {
-		return "", internal_error.NewNotFoundError(ErrCepNaoEncontrado.Error())
+		return "", ErrCepNaoEncontrado
 	}
 
 	log.Println("Localidade encontrada:", viaCep.Localidade)
