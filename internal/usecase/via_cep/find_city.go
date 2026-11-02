@@ -12,29 +12,29 @@ import (
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
 )
 
-var ErrCepObrigatorio = errors.New("zipcode is required")
-var ErrCepNaoEncontrado = errors.New("can not find zipcode")
-var ErrBuscaCep = errors.New("Error fetching zipcode data")
+var ErrCepIsRequired = errors.New("zipcode is required")
+var ErrCepNotFound = errors.New("can not find zipcode")
+var ErrFetchingCity = errors.New("error fetching city for the specified zipcode")
 
 type ViaCep struct {
-	Localidade string `json:"localidade"`
+	City string `json:"localidade"`
 }
 
-type ViaCepService struct {
+type ViaCepUseCase struct {
 	httpClient http_client.HttpClientInterface
 }
 
-func NewViaCepService(httpClient http_client.HttpClientInterface) *ViaCepService {
-	return &ViaCepService{
+func NewViaCepUseCase(httpClient http_client.HttpClientInterface) *ViaCepUseCase {
+	return &ViaCepUseCase{
 		httpClient: httpClient,
 	}
 }
 
-func (vc *ViaCepService) CarregarDadosLocalidadePorCep(ctx context.Context, cep string) (string, error) {
-	log.Println("Buscando localidade para o CEP:", cep)
+func (vc *ViaCepUseCase) FindCityByCep(ctx context.Context, cep string) (string, error) {
+	log.Println("Fetching city for the zipcode:", cep)
 
 	if cep == "" {
-		return "", ErrCepObrigatorio
+		return "", ErrCepIsRequired
 	}
 
 	var url = fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep)
@@ -51,11 +51,11 @@ func (vc *ViaCepService) CarregarDadosLocalidadePorCep(ctx context.Context, cep 
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return "", ErrCepNaoEncontrado
+		return "", ErrCepNotFound
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", ErrBuscaCep
+		return "", ErrFetchingCity
 	}
 
 	var viaCep ViaCep
@@ -69,10 +69,10 @@ func (vc *ViaCepService) CarregarDadosLocalidadePorCep(ctx context.Context, cep 
 		return "", err
 	}
 
-	if viaCep.Localidade == "" {
-		return "", ErrCepNaoEncontrado
+	if viaCep.City == "" {
+		return "", ErrCepNotFound
 	}
 
-	log.Println("Localidade encontrada:", viaCep.Localidade)
-	return viaCep.Localidade, nil
+	log.Println("City found:", viaCep.City)
+	return viaCep.City, nil
 }

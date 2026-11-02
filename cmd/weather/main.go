@@ -7,19 +7,19 @@ import (
 
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/handler"
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
-	"github.com/fredericobenevides/pge-clima-por-cep/internal/via_cep"
-	"github.com/fredericobenevides/pge-clima-por-cep/internal/weather_api"
+	"github.com/fredericobenevides/pge-clima-por-cep/internal/usecase/via_cep"
+	"github.com/fredericobenevides/pge-clima-por-cep/internal/usecase/weather_api"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Printf("Arquivo .env não encontrado, usando variáveis de ambiente. Erro: %v", err)
+		log.Printf("The file .env was not found, using environment variables. Error: %v", err)
 	}
 
-	viaCepService, weatherService := initDependencies()
-	http.HandleFunc("/clima/{cep}", handler.NewClimaHandler(viaCepService, weatherService).BuscarClima)
+	viaCepUseCase, weatherApiUseCase := initDependencies()
+	http.HandleFunc("/weather/{cep}", handler.NewWeatherHandler(viaCepUseCase, weatherApiUseCase).GetWeatherByCep)
 
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -27,15 +27,15 @@ func main() {
 	}
 }
 
-func initDependencies() (viaCepService *via_cep.ViaCepService, weatherApiService *weather_api.WeatherApiService) {
-	viaCepService = via_cep.NewViaCepService(http_client.NewHttpClient())
+func initDependencies() (viaCepUseCase *via_cep.ViaCepUseCase, weatherApiUseCase *weather_api.WeatherApiUseCase) {
+	viaCepUseCase = via_cep.NewViaCepUseCase(http_client.NewHttpClient())
 
 	apiKey := os.Getenv("WEATHER_API_KEY")
-	weatherApiService, err := weather_api.NewWeatherApiService(http_client.NewHttpClient(), apiKey)
+	weatherApiUseCase, err := weather_api.NewWeatherApiUseCase(http_client.NewHttpClient(), apiKey)
 	if err != nil {
-		log.Println("Error ao criar serviço de clima:", err)
+		log.Println("Error creating weatherApiUseCase:", err)
 		panic(err)
 	}
 
-	return
+	return viaCepUseCase, weatherApiUseCase
 }

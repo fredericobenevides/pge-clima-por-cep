@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockViaService struct {
+type MockViaUseCase struct {
 	mock.Mock
 }
 
-func (m *MockViaService) CarregarDadosLocalidadePorCep(ctx context.Context, cep string) (string, error) {
+func (m *MockViaUseCase) FindCityByCep(ctx context.Context, cep string) (string, error) {
 	args := m.Called(ctx, cep)
 	return args.String(0), args.Error(1)
 }

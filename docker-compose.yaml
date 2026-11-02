@@ -1,5 +1,5 @@
 services:
-  clima:
+  weather:
     build: .
     env_file:
       - .env

@@ -8,7 +8,7 @@ A aplicação expõe uma API HTTP que recebe um CEP brasileiro, consulta a local
 
 O fluxo da requisição é:
 
-1. A API recebe um CEP pela rota `GET /clima/{cep}`.
+1. A API recebe um CEP pela rota `GET /weather/{cep}`.
 2. O CEP é validado: deve ter exatamente oito dígitos numéricos.
 3. A ViaCEP informa a localidade correspondente ao CEP.
 4. A WeatherAPI fornece a temperatura atual da localidade.
@@ -69,7 +69,7 @@ O servidor ficará disponível em `http://localhost:8080`.
 Em outro terminal, consulte um CEP:
 
 ```bash
-curl http://localhost:8080/clima/01001000
+curl http://localhost:8080/weather/01001000
 ```
 
 ## Como executar com Docker Compose
@@ -84,14 +84,14 @@ O serviço ficará disponível em `http://localhost:8080`.
 
 ## Endpoint disponível
 
-| Método | Rota           | Descrição                                                        |
-| ------ | -------------- | ---------------------------------------------------------------- |
-| `GET`  | `/clima/{cep}` | Consulta a temperatura atual para a localidade do CEP informado. |
+| Método | Rota             | Descrição                                                        |
+| ------ | ---------------- | ---------------------------------------------------------------- |
+| `GET`  | `/weather/{cep}` | Consulta a temperatura atual para a localidade do CEP informado. |
 
 ### Exemplo de requisição
 
 ```bash
-curl http://localhost:8080/clima/01001000
+curl http://localhost:8080/weather/01001000
 ```
 
 ## Deploy no Google Cloud Run
@@ -99,5 +99,5 @@ curl http://localhost:8080/clima/01001000
 A aplicação está publicada no Google Cloud Run. A URL do serviço é:
 
 ```bash
-curl https://pge-clima-por-cep-841576980828.us-central1.run.app/clima/01001000
+curl https://pge-clima-por-cep-841576980828.us-central1.run.app/weather/01001000
 ```

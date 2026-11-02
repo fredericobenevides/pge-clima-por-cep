@@ -1,5 +1,5 @@
-@base_url = http://localhost:8080/clima
-# @base_url = https://pge-clima-por-cep-841576980828.us-central1.run.app/clima
+@base_url = http://localhost:8080/weather
+# @base_url = https://pge-clima-por-cep-841576980828.us-central1.run.app/weather
 
 # Busca informações do clima para o CEP 01001000
 GET {{base_url}}/01001000

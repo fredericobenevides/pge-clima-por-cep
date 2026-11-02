@@ -12,11 +12,11 @@ import (
 	"github.com/fredericobenevides/pge-clima-por-cep/internal/http_client"
 )
 
-var ErrApiKeyObrigatoria = errors.New("apiKey deve ser fornecida")
-var ErrCidadeObrigatoria = errors.New("cidade deve ser fornecida")
-var ErrBuscaClima = errors.New("Erro ao buscar clima para a localidade")
+var ErrApiKeyIsRequired = errors.New("apiKey is required")
+var ErrCityIsRequired = errors.New("city is required")
+var ErrFetchingTemp = errors.New("error fetching temperature for the specified city")
 
-type WeatherCurrent struct {
+type WeatherCurrentInputDTO struct {
 	CurrentTemperature CurrentTemperature `json:"current"`
 }
 
@@ -24,24 +24,24 @@ type CurrentTemperature struct {
 	TempCelsius float64 `json:"temp_c"`
 }
 
-type WeatherApiService struct {
+type WeatherApiUseCase struct {
 	httpClient http_client.HttpClientInterface
 	apiKey     string
 }
 
-func NewWeatherApiService(httpClient http_client.HttpClientInterface, apiKey string) (*WeatherApiService, error) {
+func NewWeatherApiUseCase(httpClient http_client.HttpClientInterface, apiKey string) (*WeatherApiUseCase, error) {
 	if apiKey == "" {
-		return nil, ErrApiKeyObrigatoria
+		return nil, ErrApiKeyIsRequired
 	}
 
-	return &WeatherApiService{httpClient: httpClient, apiKey: apiKey}, nil
+	return &WeatherApiUseCase{httpClient: httpClient, apiKey: apiKey}, nil
 }
 
-func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Context, localidade string) (float64, error) {
-	log.Println("Buscando clima para a seguinte localidade:", localidade)
+func (ws *WeatherApiUseCase) GetTemperatureByCity(ctx context.Context, city string) (float64, error) {
+	log.Println("Fetching temperature for the city:", city)
 
-	if localidade == "" {
-		return 0, ErrCidadeObrigatoria
+	if city == "" {
+		return 0, ErrCityIsRequired
 	}
 
 	endpoint, err := url.Parse("https://api.weatherapi.com/v1/current.json")
@@ -51,7 +51,7 @@ func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Contex
 
 	query := endpoint.Query()
 	query.Set("key", ws.apiKey)
-	query.Set("q", localidade)
+	query.Set("q", city)
 	endpoint.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", endpoint.String(), nil)
@@ -66,7 +66,7 @@ func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Contex
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return 0, ErrBuscaClima
+		return 0, ErrFetchingTemp
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -74,11 +74,11 @@ func (ws *WeatherApiService) CarregarDadosClimaPelaLocalidade(ctx context.Contex
 		return 0, err
 	}
 
-	var weather WeatherCurrent
+	var weather WeatherCurrentInputDTO
 	if err := json.Unmarshal(body, &weather); err != nil {
 		return 0, err
 	}
 
-	log.Printf("Clima encontrado para a localidade %s: %v\n", localidade, weather.CurrentTemperature.TempCelsius)
+	log.Printf("Temperature found for the city %s: %v\n", city, weather.CurrentTemperature.TempCelsius)
 	return weather.CurrentTemperature.TempCelsius, nil
 }
